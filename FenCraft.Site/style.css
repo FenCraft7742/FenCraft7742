@@ -1,0 +1,262 @@
+  :root {
+    --sidebar-w: 260px;
+    --dur: .35s;
+    --ease: cubic-bezier(.4, 0, .2, 1);
+
+    --bg: #c20000;        /* innen: am hellsten */
+  --surface: #7a0000;   /* Header + Footer: mittel */
+  --side-bg: #4d0000;   /* außen: am dunkelsten */
+
+  --ink: #ffffff;
+  --muted: #fffffd;
+  --line: #a33f3f;
+  --accent: #b01818;
+  --side-ink: #ffd6d6;
+  --side-hover: #6b0c0c;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  body.dark {
+  --bg: #0f1720;
+  --surface: #17222d;
+  --ink: #e6edf3;
+  --muted: #9aa7b3;
+  --line: #2a3945;
+  --accent: #17222d;
+  --side-bg: #0a1118;
+  --side-ink: #c9d4dc;
+  --side-hover: #1a2833;
+}
+
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Grundlayout ---------- */
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---------- Seitenleiste ---------- */
+  .sidebar {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: var(--sidebar-w);
+    overflow: hidden;
+    background: var(--side-bg);
+    color: var(--side-ink);
+    visibility: visible;
+    transition: width var(--dur) var(--ease), visibility 0s linear 0s;
+    z-index: 30;
+  }
+
+  /* Der Inhalt behält immer die volle Breite, damit der Text beim
+     Zuklappen nicht umbricht, sondern einfach "weggeschoben" wird. */
+  .sidebar-inner {
+    width: var(--sidebar-w);
+    height: 100%;
+    padding: 1.25rem 1rem;
+    overflow-y: auto;
+  }
+
+  .brand {
+    color: #fff;
+  }
+
+  .nav { list-style: none; margin: 0; padding: 0; }
+
+  .nav a {
+    display: block;
+    padding: .65rem .75rem;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color .2s;
+  }
+
+.nav button {
+    display: block;
+    padding: .65rem .75rem;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color .2s;
+
+}
+
+
+
+  .nav a:hover { background: var(--side-hover); }
+  .nav a[aria-current="page"] { background: var(--accent); color: #fff; }
+
+  .app[data-sidebar="closed"] .sidebar {
+    width: 0;
+    visibility: hidden; /* nach der Animation: kein Tab-Fokus mehr in der Leiste */
+    transition: width var(--dur) var(--ease), visibility 0s linear var(--dur);
+  }
+
+  /* ---------- Inhaltsbereich (Header, Main, Footer) ---------- */
+  .content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .site-header,
+  .site-footer {
+    background: var(--surface);
+    border-color: var(--line);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1.25rem;
+    border-bottom-width: 1px;
+  }
+
+  .site-header h1 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color .2s, border-color .2s;
+  }
+
+  .toggle:hover { background: var(--bg); border-color: var(--accent); }
+
+  .toggle svg { width: 22px; height: 22px; }
+
+  /* Das kleine Panel im Icon zeigt den aktuellen Zustand */
+  .toggle .panel {
+    fill: currentColor;
+    transform-origin: left center;
+    transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+  }
+
+  .app[data-sidebar="closed"] .toggle .panel {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+
+  main {
+    flex: 1 1 auto;
+    padding: 2rem 1.25rem;
+  }
+
+  .page {
+    max-width: 68ch;
+    margin: 0 auto;
+  }
+
+  .page h2 { margin-top: 0; }
+  .page p { color: var(--muted); }
+
+  .site-footer {
+    padding: 1.25rem;
+    border-top-width: 1px;
+    color: var(--muted);
+    font-size: .9rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .5rem 1.5rem;
+  }
+
+  .site-footer a { color: inherit; }
+
+.sidebar-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: .65rem .75rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: filter .2s;
+  text-align: center;      /* neu */
+  text-decoration: none;   /* neu */
+}
+
+.sidebar-btn:hover { filter: brightness(1.15); }
+
+  /* ---------- Abdunklung (nur mobil) ---------- */
+  .backdrop {
+    display: none;
+  }
+
+  /* ---------- Mobile Ansicht: Seitenleiste legt sich über die Seite ---------- */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      transform: translateX(0);
+      transition: transform var(--dur) var(--ease), visibility 0s linear 0s;
+      box-shadow: 0 0 40px rgba(0, 0, 0, .35);
+    }
+
+    .app[data-sidebar="closed"] .sidebar {
+      width: var(--sidebar-w);
+      transform: translateX(-100%);
+      transition: transform var(--dur) var(--ease), visibility 0s linear var(--dur);
+      box-shadow: none;
+    }
+
+    .backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 18, 26, .5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--dur) var(--ease);
+      z-index: 25;
+    }
+
+    .app[data-sidebar="open"] .backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --dur: 0s; }
+  }
