@@ -182,6 +182,7 @@
   .page {
     max-width: 68ch;
     margin: 0 auto;
+    perspective: 1000px; /* für 3D-Animationen im Spiel */
   }
 
   .page h2 { margin-top: 0; }
@@ -191,6 +192,7 @@
   main.game-main {
     padding: 0;
     display: flex;
+    justify-content: center;
   }
 
   main.game-main canvas {
@@ -273,3 +275,77 @@
   @media (prefers-reduced-motion: reduce) {
     :root { --dur: 0s; }
   }
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 200px;
+    height: 200px;
+    perspective: 1000px;
+    justify-content: center;
+}
+
+.cube {
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    position: relative;
+    animation: spin 5s infinite linear;
+}
+
+.cube .face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #DD2121;
+}
+
+.cube .face img {
+    width: 100%;
+    height: 100%;
+}
+
+.cube .front {
+    transform: rotateX(0deg) translateZ(100px);
+}
+
+.cube .back {
+    transform: rotateX(-180deg) translateZ(100px);
+}
+
+.cube .right {
+    transform: rotateX(90deg) translateZ(100px);
+}
+
+.cube .left {
+    transform: rotateX(-90deg) translateZ(100px);
+}
+
+.cube .top {
+    transform: rotateY(90deg) translateZ(100px);
+}
+
+.cube .bottom {
+    transform: rotateY(-90deg) translateZ(100px);
+}
+
+@keyframes spin {
+    from {
+        transform: rotateX(0deg) rotateY(0deg);
+    }
+
+    to {
+        transform: rotateX(360deg) rotateY(360deg);
+    }
+}
+
+
+
+
+
+
