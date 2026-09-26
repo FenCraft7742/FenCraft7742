@@ -21,7 +21,7 @@
 
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    background: var(--surface);
     color: var(--ink);
     line-height: 1.6;
   }
@@ -112,6 +112,7 @@
 
   /* ---------- Inhaltsbereich (Header, Main, Footer) ---------- */
   .content {
+    background: var(--bg);
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
@@ -185,6 +186,18 @@
 
   .page h2 { margin-top: 0; }
   .page p { color: var(--muted); }
+
+  /* ---------- Spiel-Seite: Canvas füllt main komplett aus ---------- */
+  main.game-main {
+    padding: 0;
+    display: flex;
+  }
+
+  main.game-main canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 
   .site-footer {
     padding: 1.25rem;
