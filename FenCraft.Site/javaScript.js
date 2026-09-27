@@ -52,12 +52,21 @@ const canvas = document.getElementById("game");
 // Der Spiel-Code läuft nur, wenn auf der aktuellen Seite auch ein
 // Canvas mit id="game" existiert (z. B. nur auf P1.html).
 if (canvas) {
+  // Nur auf dieser Seite (P1.html) das Scrollen komplett sperren,
+  // damit WASD/Pfeiltasten das Auto steuern und nicht die Seite
+  // scrollen, und man auch per Maus/Touch nicht runterscrollen kann.
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.height = "100%";
+  document.body.style.height = "100%";
+
   const ctx = canvas.getContext("2d");
   const main = canvas.closest("main");
   const dpr = window.devicePixelRatio || 1;
 
-  const SIZE = 400; // Maximale Größe, in die die Texturen eingepasst werden
-  let x = 180, y = 140;
+  const SIZE = 200; // Maximale Größe, in die die Texturen eingepasst werden
+  let x = 190, y = 130;
+  const startX = x, startY = y; // Startposition für den Reset-Button merken
   const keys = {};
 
   // Textur laden. Pfad relativ zur HTML-Datei (nicht absolut, sonst
@@ -81,7 +90,8 @@ if (canvas) {
 
   // Aktueller Blickwinkel des Blocks (in Radiant). Bleibt beim Stillstand
   // einfach auf dem zuletzt genutzten Wert stehen.
-  let angle = 0;
+  let angle = Math.PI / 1; 
+
 
   // Merkt sich die zuletzt gesetzte CSS-Größe, damit wir nicht bei
   // jedem Frame unnötig neu skalieren.
@@ -104,8 +114,67 @@ if (canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  document.addEventListener("keydown", e => keys[e.key] = true);
-  document.addEventListener("keyup", e => keys[e.key] = false);
+  // Bewegungstasten, die gedrückt werden dürfen. e.key wird bei
+  // Buchstaben normalisiert (kleingeschrieben), damit z. B. Feststell-
+  // taste (Caps Lock) oder Groß-/Kleinschreibung die Steuerung nicht
+  // blockiert. Zusätzlich wird für diese Tasten das Standardverhalten
+  // des Browsers (Scrollen mit Pfeiltasten/Leertaste) unterdrückt.
+  const movementKeys = new Set([
+    "arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"
+  ]);
+
+  function normalizeKey(key) {
+    return key.length === 1 ? key.toLowerCase() : key.toLowerCase();
+  }
+
+  document.addEventListener("keydown", e => {
+    const k = normalizeKey(e.key);
+    keys[k] = true;
+    if (movementKeys.has(k)) e.preventDefault();
+  });
+  document.addEventListener("keyup", e => {
+    keys[normalizeKey(e.key)] = false;
+  });
+
+  // ---------- Maussteuerung für das Auto ----------
+  const steerButtonCar = document.getElementById("steerButtonCar");
+  let mouseSteering = false;
+  // Mausposition relativ zum Canvas (Startwert = aktuelle Autoposition)
+  let mouseX = x, mouseY = y;
+
+  function updateCarButtonLabel() {
+    if (steerButtonCar) {
+      steerButtonCar.textContent = mouseSteering ? "Maussteuerung: An" : "Maussteuerung: Aus";
+    }
+  }
+
+  if (steerButtonCar) {
+    steerButtonCar.addEventListener("click", () => {
+      mouseSteering = !mouseSteering;
+      updateCarButtonLabel();
+    });
+  }
+
+  // ---------- Reset-Button für das Auto ----------
+  const resetCarButton = document.getElementById("resetCarButton");
+  if (resetCarButton) {
+    resetCarButton.addEventListener("click", () => {
+      x = startX;
+      y = startY;
+      angle = 2 * Math.PI / 2; // Startwinkel (nach links)
+      isMoving = false;
+      mouseSteering = false;
+      updateCarButtonLabel();
+    });
+  }
+
+  // Mausposition in Canvas-Koordinaten umrechnen (nicht in
+  // Fenster-Koordinaten, da der Canvas skaliert/verschoben sein kann)
+  canvas.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
 
   // Berechnet den Skalierungsfaktor, mit dem ein Bild in eine "maxSize"-Box
   // passt (größere Seite = maxSize), ohne das Seitenverhältnis zu verzerren.
@@ -128,10 +197,29 @@ if (canvas) {
 
   function update() {
     let dx = 0, dy = 0;
-    if (keys["ArrowUp"] || keys["w"]) dy -= 1;
-    if (keys["ArrowDown"] || keys["s"]) dy += 1;
-    if (keys["ArrowLeft"] || keys["a"]) dx -= 1;
-    if (keys["ArrowRight"] || keys["d"]) dx += 1;
+
+    if (mouseSteering) {
+      // Automatische Fahrt in Richtung Mauszeiger: Richtung zur Maus
+      // berechnen und normieren, damit die Geschwindigkeit konstant
+      // bleibt (unabhängig von der Entfernung zur Maus).
+      const { w: carW, h: carH } = getCarSize();
+      const cx = x + carW / 2;
+      const cy = y + carH / 2;
+      const toX = mouseX - cx;
+      const toY = mouseY - cy;
+      const dist = Math.hypot(toX, toY);
+
+      // Kurz vor dem Ziel anhalten, damit das Auto nicht zittert
+      if (dist > 4) {
+        dx = toX / dist;
+        dy = toY / dist;
+      }
+    } else {
+      if (keys["arrowup"] || keys["w"]) dy -= 1;
+      if (keys["arrowdown"] || keys["s"]) dy += 1;
+      if (keys["arrowleft"] || keys["a"]) dx -= 1;
+      if (keys["arrowright"] || keys["d"]) dx += 1;
+    }
 
     // Nur drehen, wenn sich der Block tatsächlich bewegt -
     // sonst bleibt er in der zuletzt geschauten Richtung stehen.
@@ -231,4 +319,140 @@ if (canvas) {
     requestAnimationFrame(loop);
   }
   loop();
+}
+
+// ---------- Maussteuerung für den Kopf (nur auf P2.html vorhanden) ----------
+const cubeContainer = document.getElementById("cubeContainer");
+const cube          = document.getElementById("cube");
+
+if (cubeContainer && cube) {
+  let steering = false;
+
+  // Ursprüngliche Stelle im DOM merken, damit der Kopf nach dem
+  // Steuern wieder exakt dorthin zurückkommt.
+  const originalParent = cubeContainer.parentNode;
+  const originalNextSibling = cubeContainer.nextSibling;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  // Positioniert den Container so, dass sein Mittelpunkt exakt auf
+  // den übergebenen Bildschirmkoordinaten liegt (kein Nachlaufen).
+  function positionAt(clientX, clientY) {
+    const w = cubeContainer.offsetWidth;
+    const h = cubeContainer.offsetHeight;
+    cubeContainer.style.left = (clientX - w / 2) + "px";
+    cubeContainer.style.top = (clientY - h / 2) + "px";
+  }
+
+  // Mausgeschwindigkeit (für die Kopfdrehung) und aktuelle Drehung
+  let lastMouseX = null, lastMouseY = null;
+  let velX = 0, velY = 0; // grobe Bewegungsgeschwindigkeit der Maus
+  let rotX = 0, rotY = 0; // aktuelle Drehung des Kopfes
+
+  function enableSteering(clickEvent) {
+    steering = true;
+
+    // WICHTIG: Der Kopf wird während der Steuerung direkt ins <body>
+    // gehängt. Grund für den bisherigen Versatz nach rechts: ein
+    // Vorfahre (.page) hat CSS "perspective" gesetzt, wodurch sich
+    // "position: fixed" nicht mehr auf das ganze Browserfenster
+    // bezieht, sondern auf .page - und .page sitzt wegen der
+    // Sidebar nicht bei x=0. Direkt im body gibt es dieses Problem
+    // nicht mehr, der Kopf liegt dann exakt auf dem Mauszeiger.
+    document.body.appendChild(cubeContainer);
+
+    cubeContainer.classList.add("free-drive");
+    cube.classList.add("no-spin"); // Dauer-Rotation aus, Drehung übernimmt jetzt die Maus
+
+    lastMouseX = null; // Geschwindigkeit neu beginnen, kein Sprung beim Start
+    lastMouseY = null;
+    velX = 0; velY = 0;
+
+    if (clickEvent) positionAt(clickEvent.clientX, clickEvent.clientY);
+  }
+
+  function disableSteering() {
+    steering = false;
+    cubeContainer.classList.remove("free-drive");
+    cube.classList.remove("no-spin");
+
+    // Inline-Styles wieder entfernen, damit der Kopf wieder von
+    // allein dreht und an seiner normalen Stelle sitzt.
+    cubeContainer.style.left = "";
+    cubeContainer.style.top = "";
+    cube.style.transform = "";
+    rotX = 0; rotY = 0; velX = 0; velY = 0;
+
+    // Zurück an die ursprüngliche Stelle im DOM (auf Seite 2).
+    if (originalNextSibling) {
+      originalParent.insertBefore(cubeContainer, originalNextSibling);
+    } else {
+      originalParent.appendChild(cubeContainer);
+    }
+  }
+
+  // Klick auf den Kopf selbst schaltet die Steuerung um. Die Klicks
+  // werden hier gestoppt (stopPropagation), damit derselbe Klick nicht
+  // sofort auch den "Klick daneben"-Listener unten auslöst.
+  cube.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (steering) disableSteering();
+    else enableSteering(e);
+  });
+
+  // Klick irgendwo anders auf der Seite beendet die Steuerung wieder -
+  // sonst wäre es kaum möglich, den Kopf noch gezielt zu treffen,
+  // um ihn zu stoppen.
+  document.addEventListener("click", () => {
+    if (steering) disableSteering();
+  });
+
+  // ---------- Reset-Button für den Kopf ----------
+  const resetHeadButton = document.getElementById("resetHeadButton");
+  if (resetHeadButton) {
+    resetHeadButton.addEventListener("click", (e) => {
+      e.stopPropagation(); // soll nicht gleichzeitig als "Klick daneben" zählen
+      if (steering) disableSteering();
+    });
+  }
+
+  // Kopf bleibt bei jeder Mausbewegung exakt zentriert auf dem
+  // Mauszeiger - keine Verzögerung, kein Nachlaufen. Nebenbei wird
+  // die aktuelle Bewegungsgeschwindigkeit der Maus gemessen, damit
+  // der Kopf beim Bewegen zur jeweiligen Seite drehen kann.
+  document.addEventListener("mousemove", (e) => {
+    if (!steering) return;
+    positionAt(e.clientX, e.clientY);
+
+    if (lastMouseX !== null) {
+      velX = e.clientX - lastMouseX;
+      velY = e.clientY - lastMouseY;
+    }
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+
+  const maxTilt = 45;          // Grad - wie weit der Kopf sich maximal zur Seite dreht
+  const tiltSensitivity = 3.5; // wie stark er auf die Mausgeschwindigkeit reagiert
+  const smoothing = 0.25;      // wie zügig er der Zieldrehung folgt
+
+  function rotationLoop() {
+    if (steering) {
+      const targetRotY = clamp(velX * tiltSensitivity, -maxTilt, maxTilt);
+      const targetRotX = clamp(-velY * tiltSensitivity, -maxTilt, maxTilt);
+      rotY += (targetRotY - rotY) * smoothing;
+      rotX += (targetRotX - rotX) * smoothing;
+      cube.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+
+      // Geschwindigkeit klingt von Frame zu Frame ab - bleibt die
+      // Maus stehen, dreht sich der Kopf von selbst wieder gerade
+      // nach vorn (schaut den Mauszeiger direkt an).
+      velX *= 0.75;
+      velY *= 0.75;
+    }
+    requestAnimationFrame(rotationLoop);
+  }
+  rotationLoop();
 }

@@ -178,11 +178,14 @@
     flex: 1 1 auto;
     padding: 2rem 1.25rem;
   }
+     main .pagek {
+    flex: 1 1 auto;
+    padding-top: 180px;
+  }
 
   .page {
     max-width: 68ch;
     margin: 0 auto;
-    perspective: 1000px; /* für 3D-Animationen im Spiel */
   }
 
   .page h2 { margin-top: 0; }
@@ -199,6 +202,9 @@
     display: block;
     width: 100%;
     height: 100%;
+    background-image: url("IMG/Sprites/Track/S/Spapng.png");
+    background-size: 1140px 720px;
+    background-repeat: no-repeat;
   }
 
   .site-footer {
@@ -283,11 +289,15 @@
     box-sizing: border-box;
 }
 
+/* Der Kopf sitzt im Ruhezustand normal im Seiteninhalt und wird dort
+   horizontal zentriert (margin auto). Das passt sich automatisch an
+   die Breite des sichtbaren Inhaltsbereichs an - auch wenn sich die
+   Sidebar öffnet oder schließt - ganz ohne JavaScript. */
 .container {
     width: 200px;
     height: 200px;
     perspective: 1000px;
-    justify-content: center;
+    margin: 3rem auto 0;
 }
 
 .cube {
@@ -296,6 +306,8 @@
     transform-style: preserve-3d;
     position: relative;
     animation: spin 5s infinite linear;
+    cursor: pointer;
+    pointer-events: auto; /* auch aktiv, wenn der Container (free-drive) pointer-events:none hat */
 }
 
 .cube .face {
@@ -342,6 +354,27 @@
     to {
         transform: rotateX(360deg) rotateY(360deg);
     }
+}
+
+/* ---------- Maussteuerung für den Würfel (Seite 2) ---------- */
+
+/* Solange die Steuerung aktiv ist, übernimmt JavaScript die genaue
+   Position (left/top) - die Standard-Zentrierung per transform wird
+   dafür ausgeschaltet. */
+.container.free-drive {
+    position: fixed;
+    left: 0;
+    top: 0;
+    margin: 0;
+    z-index: 40;
+    pointer-events: none; /* Klicks fallen "durch" den Kopf hindurch */
+}
+
+/* Während der Steuerung übernimmt JavaScript die Rotation
+   (leichtes Neigen in Fahrtrichtung) - die automatische
+   Dauer-Rotation wird dafür abgeschaltet. */
+.cube.no-spin {
+    animation: none;
 }
 
 
